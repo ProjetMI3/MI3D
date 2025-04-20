@@ -77,6 +77,24 @@ void initialiser_pioche(Pile* pioche) {
     melanger_pile(pioche); // Mélange final de la pioche
 }
 
+// Afficher une carte
+void afficher_carte(Carte c) {
+	if (c.visible)
+		printf("[ %2d ]", c.valeur); // Affiche la carte si elle est visible
+	else
+		printf("[ ?? ]"); // Met des ?? si elle est face cacher
+}
+
+// Afficher la main du joueur
+void afficher_main(Joueur joueur) {
+	for (int i = 0; i < NB_CARTES_JOUEUR; i++) { // Parcourt toutes les cartes de la main du joueur
+		printf("%d: ", i); // Affiche l'indice de la carte
+		afficher_carte(joueur.main[i]); // Affiche la carte correspondante
+		printf("  "); // Espace entre les cartes
+	}
+	printf("\n"); // Retour à la ligne après avoir affiché toutes les cartes
+}
+
 int main() {
 	srand(time(NULL)); 
 
@@ -100,6 +118,16 @@ int main() {
 		printf("Nom du joueur %d : ", i + 1);
 		scanf("%s", nom);
 		initialiser_joueur(&joueurs[i], nom, &pioche);
+	}
+	
+	// Affiche l’état de jeu du joueur actif à son tour
+	printf("\n--- Tour de %s ---\n", joueur->nom);
+	afficher_main(*joueur); // Affiche toutes les cartes du joueur 
+
+	if (joueur->defausse.top > 0) {
+    	printf("Carte sur la défausse : ");
+    	afficher_carte(joueur->defausse.cartes[joueur->defausse.top - 1]); // Affiche la carte visible sur la défausse
+    	printf("\n");
 	}
 
 	int partie_finie = 0;
