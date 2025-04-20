@@ -5,7 +5,7 @@
 
 #define NB_CARTES_MAX 150        // Nombre maximal de cartes dans une pile
 #define NB_CARTES_JOUEUR 6      // Nombre de cartes par joueur
-#define NB_JOUEURS_MAX 8        // Nombre maximum de joueurs autorisC)s
+#define NB_JOUEURS_MAX 8        // Nombre maximum de joueurs autorisés
 
 
 // Structure d'une carte
@@ -24,7 +24,7 @@ typedef struct {
 typedef struct {
 	char nom[30];               // Nom du joueur
 	Carte main[NB_CARTES_JOUEUR];  // Cartes personnelles du joueur
-	Pile defausse;              // Pile de dC)fausse du joueur
+	Pile defausse;              // Pile de défausse du joueur
 } Joueur;
 
 // Créer une carte avec une valeur et une visibilité donnée
@@ -82,7 +82,7 @@ int main() {
 
 	int nb_joueurs;
 	printf("Bienvenue sur CardYard (version française) !\n");
-	printf("Combien de joueurs ? (2 à 8  %d) : ", NB_JOUEURS_MAX);
+	printf("Combien de joueurs ? (2 à 8) : %d ", NB_JOUEURS_MAX);
 	scanf("%d", &nb_joueurs);
 
 	if (nb_joueurs < 2 || nb_joueurs > NB_JOUEURS_MAX) {
