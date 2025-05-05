@@ -1,0 +1,287 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#define NB_CARTES_MAX 151 // Nombre maximal de cartes dans la pioche (150 cartes au max)
+#define NB_CARTES_JOUEUR 6 // Nombre de cartes par joueur (on devrait demander aux joueurs)
+#define NB_JOUEURS_MAX 9 // Nombre maximum de joueurs autorisés (8 joueurs au max)
+
+
+// Structure d'une carte
+typedef struct {
+int valeur; // Valeur de la carte (de -2 à +12)
+int visible; // 0 = face cachée, 1 = visible
+} Carte;
+
+// Structure d'une pile de cartes (pioche ou défausse)
+typedef struct {
+Carte cartes[NB_CARTES_MAX]; // Tableau de cartes
+int top; // Nombre de cartes actuellement dans la pile
+} Pile;
+
+// Structure d'un joueur
+typedef struct {
+char *nom; // Nom du joueur (pointeur pour allouer la taille nécessaire)
+Carte main[NB_CARTES_JOUEUR]; // Cartes personnelles du joueur
+Pile defausse; // Pile de défausse du joueur
+} Joueur;
+
+// Créer une carte avec une valeur et une visibilité donnée
+Carte creer_carte(int valeur, int visible) {
+Carte c;
+c.valeur = valeur;
+c.visible = visible;
+return c;
+}
+
+// Mélanger les cartes dans une pile avec l'algorithme de Fisher-Yates
+void melanger_pile(Pile* pile) {
+for (int i = 0; i < pile->top; i++) {
+int j = rand() % pile->top;
+Carte temp = pile->cartes[i];
+pile->cartes[i] = pile->cartes[j];
+pile->cartes[j] = temp;
+//algo de Fisher-Yates
+for (int i = pile->top - 1; i > 0; i--) {
+int j = rand() % (i + 1); // Générer un index aléatoire entre 0 et i
+// Échanger les cartes aux positions i et j
+Pile temp->cartes[i] = pile->cartes[i];
+pile->cartes[i] = pile->cartes[j];
+pile[j] = temp->cartes[i];
+}
+}
+
+// Initialiser la pioche centrale avec toutes les cartes du jeu
+void initialiser_pioche(Pile* pioche) {
+pioche->top = 0; // On commence avec une pile vide
+
+// Tableau pour les quantités spéciales de -2, -1 et 0
+int quantites[3] = {5, 10, 15}; // index 0 = -2, index 1 = -1, index 2 = 0
+
+// On parcourt toutes les valeurs possibles de cartes
+for (int valeur = -2; valeur <= 12; valeur++) {
+int nombre;
+
+// Si la valeur est -2, -1 ou 0, on la prend dans le tableau quantites
+if (valeur == -2)
+nombre = quantites[0];
+else if (valeur == -1)
+nombre = quantites[1];
+else if (valeur == 0)
+nombre = quantites[2];
+else
+nombre = 10; // Par défaut, il y a 10 cartes de chaque valeur positive
+
+// On ajoute 'nombre' cartes de cette valeur dans la pioche
+for (int i = 0; i < nombre; i++) {
+Carte nouvelle = creer_carte(valeur, 0); // 0 = face cachée
+pioche->cartes[pioche->top] = nouvelle;
+pioche->top++;
+}
+}
+// Initialiser la pioche centrale mais ça m'a l'air + simple comme ça
+pioche->top = 0; // Initialisation avec une pioche vide
+pioche->cartes[NB_CARTES_MAX].visile = {0}; // Face cachée car la pioche n'est jamais visible
+// Ajouter 5 cartes de valeur -2
+for (int i = 0; i < 5; i++) {
+pioche[top++]->cartes.valeur = -2;
+}
+
+// Ajouter 10 cartes de valeur -1
+for (int i = 0; i < 10; i++) {
+pioche[top++]->cartes.valeur = -1;
+}
+
+// Ajouter 15 cartes de valeur 0
+for (int i = 0; i < 15; i++) {
+pioche[top++]->cartes.valeur = 0;
+}
+
+// Ajouter 10 cartes pour chaque valeur de 1 à 12
+for (int val = 1; val <= 12; val++) {
+for (int i = 0; i < 10; i++) {
+pioche[index++]->cartes.valeur = val;
+}
+}
+}
+
+melanger_pile(pioche); // Mélange final de la pioche
+}
+
+// Afficher une carte
+void afficher_carte(Carte c) {
+if (c.visible)
+printf("[ %2d ]", c.valeur); // Affiche la carte si elle est visible
+else
+printf("[ ?? ]"); // Met des ?? si elle est face cacher
+}
+
+// Afficher la main du joueur
+void afficher_main(Joueur joueur) {
+int nb_cartes_joueur;
+printf("Saisir le nombre de cartes personnelles pour chaque joueur (minimum une) :");
+scanf("%d",&nb_cartes_joueur);
+while(scanf("%d",&nb_cartes_joueur)!=1){ //vérifier que c'est bien un entier
+fprintf(stderr,"Erreur dans la saisie, le terme doit être un entier (strictement positif).\nRessaisissez :\n");
+scanf("%d",&nb_cartes_joueur);
+}
+while(nb_cartes_joueurs < 1 ){
+fprintf(stderr,"Erreur dans la saisie, le terme doit être un entier strictement positif.\nRessaisissez :\n");
+scanf("%d",&nb_cartes_joueur);
+}
+for (int i = 0; i < NB_CARTES_JOUEUR; i++) { // Parcourt toutes les cartes de la main du joueur
+printf("%d: ", i); // Affiche l'indice de la carte
+afficher_carte(joueur.main[i]); // Affiche la carte correspondante
+printf(" "); // Espace entre les cartes
+}
+printf("\n"); // Retour à la ligne après avoir affiché toutes les cartes
+}
+
+void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche) {
+int tour = 0; // indice du joueur actuel
+int fin = 0; // flag de fin de partie
+int premier_termine = -1; // mémorise le premier joueur à avoir révélé toutes ses cartes
+
+// Tant que la partie n'est pas terminée...
+while (!fin) {
+Joueur *actif = &joueurs[tour]; // pointeur vers le joueur dont c'est le tour
+
+printf("\n--- Tour de %s ---\n", actif->nom);
+
+// Affiche la taille restante de la pioche centrale
+printf("Cartes dans la pioche centrale : %d\n", pioche->top);
+
+// Affiche le sommet de la défausse du joueur, s'il y en a une
+if (actif->defausse.top > 0) {
+printf("Sommet de votre défausse : ");
+afficher_carte(actif->defausse.cartes[actif->defausse.top - 1]);
+printf("\n");
+}
+
+// 1) Choix de la source : pioche centrale ou sa propre défausse
+int choix_source;
+printf("1: piocher dans la pioche centrale, 2: prendre votre défausse\n> ");
+scanf("%d", &choix_source);
+
+Carte piochee;
+if (choix_source == 1) {
+// Si la pioche est vide, on annule ce tour
+if (pioche->top == 0) {
+printf("La pioche centrale est vide ! Tour annulé.\n");
+tour = (tour + 1) % nb_joueurs;
+continue;
+}
+// On retire la dernière carte de la pioche et on la révèle
+piochee = pioche->cartes[--pioche->top];
+piochee.visible = 1;
+} else {
+// Même principe pour la défausse du joueur
+if (actif->defausse.top == 0) {
+printf("Votre défausse est vide ! Tour annulé.\n");
+tour = (tour + 1) % nb_joueurs;
+continue;
+}
+piochee = actif->defausse.cartes[--actif->defausse.top];
+}
+
+// 2) Affiche la main et demande quelle carte échanger
+afficher_main(actif);
+int idx;
+printf("Index de la carte à échanger (0 à %d) : ", NB_CARTES_JOUEUR - 1);
+scanf("%d", &idx);
+// Validation de l'indice
+while (idx < 0 || idx >= NB_CARTES_JOUEUR) {
+printf("Index invalide, ressaisissez : ");
+scanf("%d", &idx);
+}
+
+// 3) Effectue l'échange :
+// - la carte retirée de la main va en défausse (face visible)
+// - la carte piochée prend sa place
+Carte remplacée = actif->main[idx];
+remplacée.visible = 1; // on retourne la carte échangée
+actif->defausse.cartes[actif->defausse.top++] = remplacée;
+actif->main[idx] = piochee; // piochee était déjà marquée visible si nécessaire
+
+// 4) Vérifie si ce joueur a révélé toutes ses cartes
+int toutes_visibles = 1;
+for (int i = 0; i < NB_CARTES_JOUEUR; i++) {
+if (!actif->main[i].visible) {
+toutes_visibles = 0;
+break;
+}
+}
+// Si c'est la première fois, on note ; sinon, on termine si tout le monde a joué après
+if (toutes_visibles) {
+if (premier_termine < 0) {
+premier_termine = tour;
+} else if (tour == premier_termine) {
+fin = 1;
+}
+}
+
+// 5) Passage au joueur suivant
+tour = (tour + 1) % nb_joueurs;
+}
+
+// Une fois la boucle terminée, on affiche les scores finaux
+printf("\n--- Fin de la partie ---\n");
+for (int i = 0; i < nb_joueurs; i++) {
+int somme = 0;
+for (int j = 0; j < NB_CARTES_JOUEUR; j++) {
+somme += joueurs[i].main[j].valeur;
+}
+printf("%s : %d points\n", joueurs[i].nom, somme);
+}
+}
+
+int main() {
+srand(time(NULL));
+
+int nb_joueurs;
+printf("Bienvenue sur CardYard (version française) !\n");
+printf("Combien de joueurs ? (2 à %d) : ", NB_JOUEURS_MAX);
+if((scanf("%d", &nb_joueurs) != 1){
+fprintf(stderr,"Entrée invalide. Veuillez saisir un entier.\n");
+int c;
+while((c = getchar()) != '\n' && c!= EOF){
+nb_joueurs = 0; // Pour que la boucle se répète
+continue; // afin de sauter le do et de recommencer
+}
+
+while (nb_joueurs < 2 || nb_joueurs > NB_JOUEURS_MAX) {
+printf("Nombre invalide. Ressaisissez le nombre de joueurs :\n");
+scanf("%d",&nb_joueurs);
+}
+
+Joueur joueurs[NB_JOUEURS_MAX];
+Pile pioche;
+initialiser_pioche(&pioche);
+int i;
+
+// Initialisation des joueurs
+for (int i = 0; i < nb_joueurs; i++) {
+char nom_temp[256]; // Tampon pour la saisie du nom
+printf("Nom du joueur %d : ", i + 1);
+scanf("%255s", nom_temp); // On limite à 255 chars + '\0'
+
+// Allocation dynamique juste assez grande pour le nom
+joueurs[i].nom = malloc(strlen(nom_temp) + 1);
+if (joueurs[i].nom == NULL) {
+fprintf(stderr,"Échec de l'allocation pour le nom du joueur");
+exit(1);
+}
+strcpy(joueurs[i].nom, nom_temp);
+initialiser_joueur(&joueurs[i], joueurs[i].nom, &pioche);
+}
+
+// Lancement de la boucle principale de jeu
+jouer_partie(joueurs, nb_joueurs, &pioche);
+
+// Libération de la mémoire allouée pour les noms
+for (int i = 0; i < nb_joueurs; i++) {
+free(joueurs[i].nom);
+}
+return 0;
+}
