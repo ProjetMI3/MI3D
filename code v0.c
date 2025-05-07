@@ -53,18 +53,12 @@ void initialiser_pioche(Pile* pioche) {
             pioche->cartes[pioche->top++] = nouvelle;
         }
     }
-
     melanger_pile(pioche);
 }
 
 void initialiser_joueur(Joueur* joueur, const char* nom, Pile* pioche) {
     joueur->defausse.top = 0;
-
     for (int i = 0; i < NB_CARTES_JOUEUR; i++) {
-        if (pioche->top == 0) {
-            printf("Erreur : plus de cartes dans la pioche.\n");
-            exit(1);
-        }
         joueur->main[i] = pioche->cartes[--pioche->top];
         joueur->main[i].visible = 0;
     }
@@ -88,6 +82,7 @@ void afficher_main(Joueur joueur) {
 
 void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche) {
     int tour = 0, fin = 0, premier_termine = -1;
+    int numero_tour = 0;
 
     while (!fin) {
         Joueur *actif = &joueurs[tour];
@@ -101,15 +96,21 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche) {
             printf("\n");
         }
 
-        int choix_source;
-        printf("1: piocher dans la pioche centrale, 2: prendre votre défausse\n> ");
-        scanf("%d", &choix_source);
-
+        int choix_source = 1;
         Carte piochee;
+
+        if (numero_tour == 0 && tour == 0) {
+            printf("Premier tour : vous piochez automatiquement depuis la pioche centrale.\n");
+        } else {
+            printf("1: piocher dans la pioche centrale, 2: prendre votre défausse\n> ");
+            scanf("%d", &choix_source);
+        }
+
         if (choix_source == 1) {
             if (pioche->top == 0) {
                 printf("La pioche est vide ! Tour annulé.\n");
                 tour = (tour + 1) % nb_joueurs;
+                numero_tour++;
                 continue;
             }
             piochee = pioche->cartes[--pioche->top];
@@ -118,6 +119,7 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche) {
             if (actif->defausse.top == 0) {
                 printf("Défausse vide ! Tour annulé.\n");
                 tour = (tour + 1) % nb_joueurs;
+                numero_tour++;
                 continue;
             }
             piochee = actif->defausse.cartes[--actif->defausse.top];
@@ -154,26 +156,29 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche) {
         }
 
         tour = (tour + 1) % nb_joueurs;
+        numero_tour++;
     }
 
     printf("\n--- Fin de la partie ---\n");
     for (int i = 0; i < nb_joueurs; i++) {
-        int score = 0;
-        for (int j = 0; j < NB_CARTES_JOUEUR; j++)
-            score += joueurs[i].main[j].valeur;
-        printf("%s : %d points\n", joueurs[i].nom, score);
+        int somme = 0;
+        for (int j = 0; j < NB_CARTES_JOUEUR; j++) {
+            somme += joueurs[i].main[j].valeur;
+        }
+        printf("%s : %d points\n", joueurs[i].nom, somme);
     }
 }
 
 int main() {
     srand(time(NULL));
-    int nb_joueurs;
 
+    int nb_joueurs;
     printf("Bienvenue sur CardYard (version française) !\n");
     printf("Combien de joueurs ? (2 à %d) : ", NB_JOUEURS_MAX);
-    if (scanf("%d", &nb_joueurs) != 1 || nb_joueurs < 2 || nb_joueurs > NB_JOUEURS_MAX) {
-        fprintf(stderr, "Entrée invalide.\n");
-        return 1;
+    while (scanf("%d", &nb_joueurs) != 1 || nb_joueurs < 2 || nb_joueurs > NB_JOUEURS_MAX) {
+        printf("Entrée invalide. Veuillez saisir un entier entre 2 et %d :\n", NB_JOUEURS_MAX);
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
     }
 
     Joueur joueurs[NB_JOUEURS_MAX];
@@ -184,13 +189,14 @@ int main() {
         char nom_temp[256];
         printf("Nom du joueur %d : ", i + 1);
         scanf("%255s", nom_temp);
+
         joueurs[i].nom = malloc(strlen(nom_temp) + 1);
-        if (!joueurs[i].nom) {
-            fprintf(stderr, "Erreur d'allocation mémoire.\n");
+        if (joueurs[i].nom == NULL) {
+            fprintf(stderr, "Échec de l'allocation pour le nom du joueur\n");
             exit(1);
         }
         strcpy(joueurs[i].nom, nom_temp);
-        initialiser_joueur(&joueurs[i], nom_temp, &pioche);
+        initialiser_joueur(&joueurs[i], joueurs[i].nom, &pioche);
     }
 
     jouer_partie(joueurs, nb_joueurs, &pioche);
