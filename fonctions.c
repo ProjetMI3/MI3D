@@ -1,3 +1,4 @@
+#include <structures.h>
 Carte creer_carte(int valeur, int visible) {
     Carte c;
     c.valeur = valeur;
