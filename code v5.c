@@ -295,13 +295,30 @@ if (tous_visibles) {
     }
 
     // Résultats
-    printf("\n--- Fin de la partie ---\n");
-    for (int i = 0; i < nb_joueurs; i++) {
-        int score = 0;
-        for (int j = 0; j < nb_cartes; j++)
-            score += joueurs[i].main[j].valeur;
-        printf("%s : %d points\n", joueurs[i].nom, score);
+printf("\n--- Fin de la partie ---\n");
+int scores[NB_JOUEURS_MAX];
+int min_score = 9999; // Une valeur suffisamment grande
+
+for (int i = 0; i < nb_joueurs; i++) {
+    int score = 0;
+    for (int j = 0; j < nb_cartes; j++)
+        score += joueurs[i].main[j].valeur;
+    scores[i] = score;
+    if (score < min_score) {
+        min_score = score;
     }
+    printf("%s : %d points\n", joueurs[i].nom, score);
+}
+
+// Affichage du/des gagnant(s)
+printf("\n🏆 Vainqueur%s : ", (min_score == 9999 ? "" : " "));
+int gagnant_unique = 1;
+for (int i = 0; i < nb_joueurs; i++) {
+    if (scores[i] == min_score) {
+        printf("%s ", joueurs[i].nom);
+    }
+}
+printf("avec %d points !\n", min_score);
 }
 
 
