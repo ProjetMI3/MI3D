@@ -1,3 +1,4 @@
+#include <structures.h>
 int main() {
     srand(time(NULL));
     int nb_joueurs, nb_cartes;
