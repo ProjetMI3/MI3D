@@ -136,22 +136,37 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
 
         // Choix de la source
         int choix_source;
-        printf("\n1: piocher dans la pioche centrale\n");
-        if (tour_total > 0) {
-            // Vérifie qu’au moins une autre défausse est disponible
-            int defausse_disponible = 0;
-            for (int i = 0; i < nb_joueurs; i++) {
-                if (i != tour && joueurs[i].defausse.top > 0) {
-                    defausse_disponible = 1;
-                    break;
+        while (1) {  // Boucle pour assurer une saisie valide
+            printf("\n1: piocher dans la pioche centrale\n");
+            printf("2: piocher dans votre propre défausse\n");
+            if (tour_total > 0) {
+                // Vérifie qu’au moins une autre défausse est disponible
+                int defausse_disponible = 0;
+                for (int i = 0; i < nb_joueurs; i++) {
+                    if (i != tour && joueurs[i].defausse.top > 0) {
+                        defausse_disponible = 1;
+                        break;
+                    }
+                }
+                if (defausse_disponible) {
+                    printf("3: piocher dans la défausse d'un autre joueur\n");
                 }
             }
-            if (defausse_disponible) {
-                printf("3: piocher dans la défausse d'un autre joueur\n");
+
+            printf("> ");
+            if (scanf("%d", &choix_source) != 1) {
+                while (getchar() != '\n');  // Vider le buffer de saisie
+                printf("Saisie invalide. Essayez encore.\n");
+                continue;  // Redemander la saisie
+            }
+
+            // Vérification de la saisie du joueur
+            if (choix_source == 1 || (choix_source == 2 && actif->defausse.top > 0) || (choix_source == 3 && tour_total > 0)) {
+                break;  // Saisie valide, sortir de la boucle
+            } else {
+                printf("Choix invalide, ressaisissez : ");
             }
         }
-        printf("> ");
-        scanf("%d", &choix_source);
 
         Carte piochee;
         int joueur_choisi = -1;  // Initialisation ici
@@ -169,6 +184,19 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
             afficher_carte(piochee);
             printf("\n");
 
+        } else if (choix_source == 2) {
+            // Vérifier si la défausse du joueur est vide
+            if (actif->defausse.top == 0) {
+                printf("Vous n'avez pas de cartes dans votre défausse !\n");
+                continue;  // Redemander le choix sans annuler le tour
+            }
+
+            // Piocher dans la propre défausse
+            piochee = actif->defausse.cartes[--actif->defausse.top];
+            printf("Vous avez pris une carte de votre défausse : ");
+            afficher_carte(piochee);
+            printf("\n");
+
         } else if (choix_source == 3 && tour_total > 0) {
             // Afficher uniquement les joueurs valides
             printf("Joueurs disponibles pour piocher leur défausse :\n");
@@ -179,34 +207,20 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
             }
 
             printf("Numéro du joueur : ");
-            scanf("%d", &joueur_choisi);
-
-            if (joueur_choisi < 0 || joueur_choisi >= nb_joueurs || joueur_choisi == tour || joueurs[joueur_choisi].defausse.top == 0) {
+            if (scanf("%d", &joueur_choisi) != 1 || joueur_choisi < 0 || joueur_choisi >= nb_joueurs || joueur_choisi == tour || joueurs[joueur_choisi].defausse.top == 0) {
                 printf("Choix invalide. Vous devez piocher dans la pioche centrale.\n");
-                if (pioche->top == 0) {
-                    printf("La pioche est vide ! Tour annulé.\n");
-                    tour = (tour + 1) % nb_joueurs;
-                    tour_total++;
-                    continue;
-                }
                 piochee = pioche->cartes[--pioche->top];
                 piochee.visible = 1;
                 printf("Vous avez pioché : ");
                 afficher_carte(piochee);
                 printf("\n");
-                joueur_choisi = -1;  // Pour éviter d'aller modifier sa défausse
+                joueur_choisi = -1;  // Pour éviter de modifier sa défausse
             } else {
                 piochee = joueurs[joueur_choisi].defausse.cartes[--joueurs[joueur_choisi].defausse.top];
                 printf("Vous avez pris une carte de la défausse de %s : ", joueurs[joueur_choisi].nom);
                 afficher_carte(piochee);
                 printf("\n");
             }
-
-        } else {
-            printf("Choix invalide, tour annulé.\n");
-            tour = (tour + 1) % nb_joueurs;
-            tour_total++;
-            continue;
         }
 
         // Choix de la carte à remplacer
@@ -224,12 +238,14 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
         Carte remplacee = actif->main[idx];
         remplacee.visible = 1;
 
+        // Mise à jour de la défausse du joueur actif
         if (joueur_choisi != -1) {
             joueurs[joueur_choisi].defausse.cartes[joueurs[joueur_choisi].defausse.top++] = remplacee;
         } else {
             actif->defausse.cartes[actif->defausse.top++] = remplacee;
         }
 
+        // Mise à jour de la main du joueur actif
         actif->main[idx] = piochee;
 
         printf("Votre main mise à jour :\n");
@@ -268,7 +284,6 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
     }
 }
 
-        
 
 
 
