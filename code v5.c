@@ -229,11 +229,23 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
 
         int idx;
         printf("Index de la carte à échanger (0 à %d) : ", nb_cartes - 1);
-        scanf("%d", &idx);
-        while (idx < 0 || idx >= nb_cartes) {
-            printf("Index invalide, ressaisissez : ");
-            scanf("%d", &idx);
+        while (1) {
+    printf("Index de la carte à échanger (0 à %d) : ", nb_cartes - 1);
+    if (scanf("%d", &idx) == 1) {
+        if (idx >= 0 && idx < nb_cartes) {
+            break;  // sortie : saisie correcte et dans les limites
+        } else {
+            printf("Index hors limites. Essayez encore.\n");
         }
+    } else {
+        // Saisie invalide (pas un entier)
+        while (getchar() != '\n'); // vide le buffer
+        printf("Saisie invalide. Essayez encore.\n");
+    }
+
+
+}
+
 
         Carte remplacee = actif->main[idx];
         remplacee.visible = 1;
@@ -262,13 +274,21 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
             }
         }
 
-        if (toutes_visibles) {
-            if (premier_termine < 0) {
-                premier_termine = tour;
-            } else if (tour == premier_termine) {
-                fin = 1;
-            }
+        // Vérifie si TOUS les joueurs ont toutes leurs cartes visibles
+        int tous_visibles = 1;
+        for (int j = 0; j < nb_joueurs; j++) {
+            for (int k = 0; k < nb_cartes; k++) {
+                if (!joueurs[j].main[k].visible) {
+                    tous_visibles = 0;
+                    break;
         }
+    }
+        if (!tous_visibles) break;
+}
+if (tous_visibles) {
+    fin = 1;
+}
+
 
         tour = (tour + 1) % nb_joueurs;
         tour_total++;
@@ -305,11 +325,18 @@ int main() {
     } while (nb_joueurs < 2 || nb_joueurs > 8);
 
 
+ do {
     printf("Combien de cartes voulez-vous distribuer à chaque joueur ? (1 à 10) : ");
-    if (scanf("%d", &nb_cartes) != 1 || nb_cartes < 1 || nb_cartes > 10) {
+    if (scanf("%d", &nb_cartes) != 1) {
+        while (getchar() != '\n'); // vide le buffer
+        nb_cartes = -1; // force la répétition
         fprintf(stderr, "Entrée invalide.\n");
-        return 1;
+        continue;
     }
+    if (nb_cartes < 1 || nb_cartes > 10) {
+        fprintf(stderr, "Entrée invalide.\n");
+    }
+} while (nb_cartes < 1 || nb_cartes > 10);
 
     Joueur joueurs[NB_JOUEURS_MAX];
     Pile pioche;
