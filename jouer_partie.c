@@ -1,4 +1,4 @@
-#include <structures.h>
+#include "structures.h"
 void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes) {
     int tour = 0, fin = 0, premier_termine = -1;
     int tour_total = 0;
