@@ -363,7 +363,9 @@ int main() {
     for (int i = 0; i < nb_joueurs; i++) {
         char nom_temp[256];
         printf("Nom du joueur %d : ", i + 1);
-        scanf("%255s", nom_temp);
+        while (getchar() != '\n'); // vide le buffer après scanf précédent
+        fgets(nom_temp, sizeof(nom_temp), stdin);
+        nom_temp[strcspn(nom_temp, "\n")] = 0; // supprime le \n final
         joueurs[i].nom = malloc(strlen(nom_temp) + 1);
         if (!joueurs[i].nom) {
             fprintf(stderr, "Erreur d'allocation mémoire.\n");
