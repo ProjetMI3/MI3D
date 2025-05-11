@@ -237,23 +237,22 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
 
         // Choix de la carte à remplacer
         printf("\nVotre main :\n");
-        afficher_main(*actif, nb_cartes);
+    afficher_main(*actif, nb_cartes);
 
-        int idx;
-        printf("Index de la carte à échanger (0 à %d) : ", nb_cartes - 1);
-        while (1) {
-    printf("Index de la carte à échanger (0 à %d) : ", nb_cartes - 1);
-    if (scanf("%d", &idx) == 1) {
-        if (idx >= 0 && idx < nb_cartes) {
-            break;  // sortie : saisie correcte et dans les limites
+    int idx;
+    while (1) {
+        printf("Index de la carte à échanger (0 à %d) : ", nb_cartes - 1);  // Affichage ici (une seule fois)
+        if (scanf("%d", &idx) == 1) {
+            if (idx >= 0 && idx < nb_cartes) {
+                break;  // sortie : saisie correcte et dans les limites
+            } else {
+                printf("Index hors limites. Essayez encore.\n");
+            }
         } else {
-            printf("Index hors limites. Essayez encore.\n");
+            // Saisie invalide (pas un entier)
+            while (getchar() != '\n'); // vide le buffer
+            printf("Saisie invalide. Essayez encore.\n");
         }
-    } else {
-        // Saisie invalide (pas un entier)
-        while (getchar() != '\n'); // vide le buffer
-        printf("Saisie invalide. Essayez encore.\n");
-    }
 }
 
 
