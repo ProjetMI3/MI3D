@@ -1,0 +1,55 @@
+📦 CardYard — Jeu de cartes en C
+
+CardYard est un petit jeu de cartes en ligne de commande, développé en langage C. Il simule un jeu où les joueurs piochent, échangent et révèlent des cartes jusqu'à ce qu’un joueur découvre toutes les siennes. Le gagnant est celui avec le score le plus bas.
+🔧 Contenu du projet
+
+    main.c : point d’entrée du programme, gère le menu et la configuration de la partie.
+
+    jouer_partie.c : logique principale du déroulement du jeu (tours, échanges, fin).
+
+    fonctions.c : fonctions utilitaires pour gérer l’affichage, les cartes, etc.
+
+    structures.h : définitions des structures Carte, Pile, Joueur, etc.
+
+    Makefile : automate de compilation.
+
+🛠️ Compilation & Exécution
+Compilation
+
+Compilez tout avec :
+
+make
+
+Cela génère un exécutable appelé cardyard.
+Exécution
+
+Lancez le programme :
+
+./cardyard
+
+🔄 Nettoyage
+Nettoyer les fichiers objets (.o) uniquement :
+
+make clean
+
+Tout supprimer (objets + exécutable) :
+
+make fclean
+
+Recompiler depuis zéro :
+
+make re
+
+📌 Notes
+
+    Le nombre de joueurs est configurable (entre 2 et 8).
+
+    Le nombre de cartes distribuées est aussi défini par l’utilisateur (entre 1 et 10).
+
+    Une défausse est gérée pour chaque joueur, et les choix stratégiques sont possibles.
+
+🧑‍💻 Auteurs
+
+    Projet développé en C dans un cadre pédagogique.
+
+    Dépend uniquement de la bibliothèque standard C (stdio.h, stdlib.h, string.h, time.h).
