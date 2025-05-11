@@ -1,0 +1,523 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#define NB_CARTES_MAX 151
+#define NB_JOUEURS_MAX 9
+
+typedef struct {
+    int valeur;
+    int visible;
+} Carte;
+
+typedef struct {
+    Carte cartes[NB_CARTES_MAX];
+    int top;
+} Pile;
+
+typedef struct {
+    char *nom;
+    Carte *main;  // Utilisation d'un tableau dynamique pour les cartes du joueur
+    Pile defausse;
+} Joueur;
+
+Carte creer_carte(int valeur, int visible) {
+    Carte c;
+    c.valeur = valeur;
+    c.visible = visible;
+    return c;
+}
+
+void melanger_pile(Pile* pile) {
+    for (int i = pile->top - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        Carte temp = pile->cartes[i];
+        pile->cartes[i] = pile->cartes[j];
+        pile->cartes[j] = temp;
+    }
+}
+
+void initialiser_pioche(Pile* pioche) {
+    pioche->top = 0;
+    int quantites[3] = {5, 10, 15};
+
+    for (int valeur = -2; valeur <= 12; valeur++) {
+        int nombre = (valeur == -2) ? quantites[0] :
+                     (valeur == -1) ? quantites[1] :
+                     (valeur == 0)  ? quantites[2] : 10;
+
+        for (int i = 0; i < nombre; i++) {
+            Carte nouvelle = creer_carte(valeur, 0);
+            pioche->cartes[pioche->top++] = nouvelle;
+        }
+    }
+
+    melanger_pile(pioche);
+}
+
+void initialiser_joueur(Joueur* joueur, const char* nom, Pile* pioche, int nb_cartes) {
+    joueur->defausse.top = 0;
+    joueur->main = malloc(nb_cartes * sizeof(Carte)); // Allocation dynamique pour les cartes du joueur
+
+    if (!joueur->main) {
+        fprintf(stderr, "Erreur d'allocation mémoire.\n");
+        exit(1);
+    }
+
+    for (int i = 0; i < nb_cartes; i++) {
+        if (pioche->top == 0) {
+            printf("Erreur : plus de cartes dans la pioche.\n");
+            exit(1);
+        }
+        joueur->main[i] = pioche->cartes[--pioche->top];
+        joueur->main[i].visible = 0;
+    }
+}
+
+void afficher_carte(Carte c) {
+    if (!c.visible) {
+        // Carte non visible (face cachée)
+        printf("\033[1;30;100m[ ?? ]\033[0m ");
+        return;
+    }
+
+    int val = c.valeur;
+    const char* color_code;
+
+    if (val == -2)        color_code = "\033[1;37;41m";   // texte blanc, fond rouge
+    else if (val <= 0)    color_code = "\033[1;30;43m";   // texte noir, fond jaune
+    else if (val <= 5)    color_code = "\033[1;30;42m";   // texte noir, fond vert
+    else if (val <= 8)    color_code = "\033[1;30;46m";   // texte noir, fond cyan
+    else                  color_code = "\033[1;37;45m";   // texte blanc, fond magenta
+
+    printf("%s[ %2d ]\033[0m ", color_code, val);
+}
+
+void afficher_main(Joueur joueur, int nb_cartes) {
+    for (int i = 0; i < nb_cartes; i++) {
+        printf("%d: ", i);
+        afficher_carte(joueur.main[i]);
+        printf(" ");
+    }
+    printf("\n");
+}
+
+void afficher_defausse(Joueur joueur) {
+    if (joueur.defausse.top > 0) {
+        printf("Défausse de %s : ", joueur.nom);
+        for (int i = 0; i < joueur.defausse.top; i++) {
+            afficher_carte(joueur.defausse.cartes[i]);
+            printf(" ");
+        }
+        printf("\n");
+    }
+}
+
+/* Nouveaux prototypes pour la sauvegarde */
+int sauvegarde_existe(void);
+void liberer_etat_jeu(Joueur* joueurs, int nb_joueurs);
+
+/* Fonction pour afficher le menu des options pendant la partie */
+void afficher_menu_options(int tour_total, int nb_joueurs, Joueur joueurs[], int tour_actuel) {
+    /* Affiche les options de base */
+    printf("\nOptions :\n");
+    printf("1: Piocher dans la pioche centrale\n");
+    printf("2: Piocher dans votre défausse\n");
+    
+    /* Option 3 seulement si :
+       - Ce n'est pas le premier tour (tour_total > 0)
+       - Au moins un autre joueur a des cartes dans sa défausse */
+    if (tour_total > 0) {
+        for (int i = 0; i < nb_joueurs; i++) {
+            if (i != tour_actuel && joueurs[i].defausse.top > 0) {
+                printf("3: Piocher dans la défausse de %s\n", joueurs[i].nom);
+                break;
+            }
+        }
+    }
+    
+    /* Option 4 toujours disponible */
+    printf("4: Sauvegarder et quitter\n");
+}    
+
+
+void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes) {
+    int tour = 0;
+    int tour_total = 0;
+    int fin = 0;
+
+    while (!fin) {
+        Joueur *actif = &joueurs[tour];
+
+        printf("\n--- Tour de %s ---\n", actif->nom);
+        printf("Cartes dans la pioche centrale : %d\n", pioche->top);
+
+        // Affichage des défausses des autres joueurs (si tour_total > 0)
+        if (tour_total > 0) {
+            printf("\nDéfausses des autres joueurs :\n");
+            for (int i = 0; i < nb_joueurs; i++) {
+                if (i != tour && joueurs[i].defausse.top > 0) {
+                    afficher_defausse(joueurs[i]);
+                }
+            }
+        }
+
+        // Affichage de la propre défausse
+        if (actif->defausse.top > 0) {
+            afficher_defausse(*actif);
+        }
+
+        // Affichage de la main du joueur
+        afficher_main(*actif, nb_cartes);
+
+        // Choix de la source
+        int choix_source;
+while (1) {
+    printf("\n1: piocher dans la pioche centrale\n");
+    printf("2: piocher dans votre propre défausse\n");
+
+    int defausse_disponible = 0;
+    for (int i = 0; i < nb_joueurs; i++) {
+        if (i != tour && joueurs[i].defausse.top > 0) {
+            defausse_disponible = 1;
+            break;
+        }
+    }
+    if (defausse_disponible && tour_total > 0) {
+        printf("3: piocher dans la défausse d'un autre joueur\n");
+    }
+
+    printf("4: Sauvegarder et quitter\n");
+    printf("> ");
+
+    if (scanf("%d", &choix_source) != 1) {
+        while (getchar() != '\n');
+        printf("Saisie invalide. Essayez encore.\n");
+        continue;
+    }
+
+    // Gestion spécifique de l'option 4
+    if (choix_source == 4) {
+        if (sauvegarder_partie(joueurs, nb_joueurs, pioche, nb_cartes)) {
+            printf("Partie sauvegardée avec succès. Au revoir !\n");
+            return; // Quitte immédiatement la fonction
+        } else {
+            printf("Échec de la sauvegarde. Voulez-vous :\n");
+            printf("1) Réessayer la sauvegarde\n");
+            printf("2) Continuer sans sauvegarder\n");
+            printf("3) Quitter sans sauvegarder\n");
+            printf("> ");
+            
+            int choix_erreur;
+            if (scanf("%d", &choix_erreur) == 1) {
+                if (choix_erreur == 3) return;
+                if (choix_erreur == 2) break; // Sort de la boucle while(1)
+                // Sinon (choix 1), reste dans la boucle pour réessayer
+            }
+            while (getchar() != '\n'); // Nettoie le buffer
+            continue;
+        }
+    }
+
+    // Validation des autres choix
+    if ((choix_source == 1) || 
+        (choix_source == 2 && actif->defausse.top > 0) || 
+        (choix_source == 3 && defausse_disponible && tour_total > 0)) {
+        break;
+    }
+    
+    printf("Choix invalide, ressaisissez : ");
+}
+
+
+
+        Carte piochee;
+        int joueur_choisi = -1;
+
+        // Traitement du choix
+        if (choix_source == 1) {
+            if (pioche->top == 0) {
+                printf("La pioche est vide ! Tour annulé.\n");
+                tour = (tour + 1) % nb_joueurs;
+                tour_total++;
+                continue;
+            }
+            piochee = pioche->cartes[--pioche->top];
+            piochee.visible = 1;
+            printf("Vous avez pioché : "); afficher_carte(piochee); printf("\n");
+
+        } else if (choix_source == 2) {
+            if (actif->defausse.top == 0) {
+                printf("Votre défausse est vide !\n");
+                continue;
+            }
+            piochee = actif->defausse.cartes[--actif->defausse.top];
+            printf("Vous avez pris une carte de votre défausse : "); afficher_carte(piochee); printf("\n");
+
+        } else if (choix_source == 3) {
+            printf("Joueurs disponibles pour piocher leur défausse :\n");
+            for (int i = 0; i < nb_joueurs; i++) {
+                if (i != tour && joueurs[i].defausse.top > 0) {
+                    printf("%d: %s\n", i, joueurs[i].nom);
+                }
+            }
+            printf("Numéro du joueur : ");
+            if (scanf("%d", &joueur_choisi) != 1 || joueur_choisi < 0 || joueur_choisi >= nb_joueurs ||
+                joueur_choisi == tour || joueurs[joueur_choisi].defausse.top == 0) {
+                printf("Choix invalide. Piocher dans la pioche centrale.\n");
+                piochee = pioche->cartes[--pioche->top];
+                piochee.visible = 1;
+                printf("Vous avez pioché : "); afficher_carte(piochee); printf("\n");
+                joueur_choisi = -1;
+            } else {
+                piochee = joueurs[joueur_choisi].defausse.cartes[--joueurs[joueur_choisi].defausse.top];
+                printf("Vous avez pris une carte de la défausse de %s : ", joueurs[joueur_choisi].nom);
+                afficher_carte(piochee); printf("\n");
+            }
+        }
+
+        // Échange de carte
+        afficher_main(*actif, nb_cartes);
+        int idx;
+        while (1) {
+            printf("Index de la carte à échanger (0 à %d) : ", nb_cartes - 1);
+            if (scanf("%d", &idx) == 1 && idx >= 0 && idx < nb_cartes) break;
+            while (getchar() != '\n');
+            printf("Index invalide. Réessayez.\n");
+        }
+
+        Carte remplacee = actif->main[idx]; remplacee.visible = 1;
+        if (joueur_choisi != -1)
+            joueurs[joueur_choisi].defausse.cartes[joueurs[joueur_choisi].defausse.top++] = remplacee;
+        else
+            actif->defausse.cartes[actif->defausse.top++] = remplacee;
+        actif->main[idx] = piochee;
+
+        printf("Votre main mise à jour :\n"); afficher_main(*actif, nb_cartes);
+        printf("Votre défausse mise à jour :\n"); afficher_defausse(*actif);
+
+        // Fin de partie ?
+        int tous_visibles = 1;
+        for (int j = 0; j < nb_joueurs && tous_visibles; j++) {
+            for (int k = 0; k < nb_cartes; k++) {
+                if (!joueurs[j].main[k].visible) { tous_visibles = 0; break; }
+            }
+        }
+        if (tous_visibles) fin = 1;
+
+        // Passage au tour suivant
+        tour = (tour + 1) % nb_joueurs;
+        tour_total++;
+    }
+
+    // Affichage des résultats
+    printf("\n--- Fin de la partie ---\n");
+    int scores[nb_joueurs];
+    int indices[nb_joueurs];
+    int min_score = INT_MAX;
+
+    for (int i = 0; i < nb_joueurs; i++) {
+        int score = 0;
+        for (int j = 0; j < nb_cartes; j++) score += joueurs[i].main[j].valeur;
+        scores[i] = score;
+        indices[i] = i;
+        if (score < min_score) min_score = score;
+    }
+
+    for (int i = 0; i < nb_joueurs - 1; i++) {
+        for (int j = 0; j < nb_joueurs - i - 1; j++) {
+            if (scores[indices[j]] > scores[indices[j+1]]) {
+                int tmp = indices[j]; indices[j] = indices[j+1]; indices[j+1] = tmp;
+            }
+        }
+    }
+
+    for (int i = 0; i < nb_joueurs; i++) {
+        int idx = indices[i];
+        printf("%s : %d points\n", joueurs[idx].nom, scores[idx]);
+    }
+
+    printf("\n🏆 Vainqueur(s) avec %d points : ", min_score);
+    for (int i = 0; i < nb_joueurs; i++) {
+        if (scores[i] == min_score) printf("%s ", joueurs[i].nom);
+    }
+    printf("\n");
+}
+
+
+// Fonctions de sauvegarde 
+int sauvegarde_existe(void) {
+    const long MIN_TAILLE_ATTENDUE = 2 * sizeof(int) + sizeof(Pile);
+    FILE* f = fopen("cardyard.sav", "rb");
+    
+    if (!f) return 0;
+    
+    // Vérification des opérations de positionnement
+    if (fseek(f, 0, SEEK_END) != 0) {
+        fclose(f);
+        return 0;
+    }
+    
+    long size = ftell(f);
+    fclose(f);
+    
+    // Taille valide ET cohérente avec l'en-tête minimal
+    return (size >= MIN_TAILLE_ATTENDUE);
+}
+
+void liberer_etat_jeu(Joueur* joueurs, int nb_joueurs) {
+    if (!joueurs || nb_joueurs <= 0) return;
+    
+    for (int i = 0; i < nb_joueurs; i++) {
+        free(joueurs[i].nom);    // free(NULL) est safe
+        free(joueurs[i].main);   // mais moins explicite
+        joueurs[i].nom = NULL;
+        joueurs[i].main = NULL;
+    }
+}
+
+/**
+ * Sauvegarde l'état actuel du jeu dans un fichier binaire
+ * @return 1 si succès, 0 si échec
+ */
+int sauvegarder_partie(const Joueur* joueurs, int nb_joueurs, const Pile* pioche, int nb_cartes) {
+    FILE* fichier = fopen("cardyard.sav", "wb");
+    if (!fichier) {
+        perror("Erreur création fichier");
+        return 0;
+    }
+
+    // 1. En-tête (nb_joueurs et nb_cartes sont constants pour toute la partie)
+    if (fwrite(&nb_joueurs, sizeof(int), 1, fichier) != 1) goto erreur;
+    if (fwrite(&nb_cartes, sizeof(int), 1, fichier) != 1) goto erreur;
+
+    // 2. Pioche
+    if (fwrite(pioche, sizeof(Pile), 1, fichier) != 1) goto erreur;
+
+    // 3. Joueurs
+    for (int i = 0; i < nb_joueurs; i++) {
+        // Nom (avec \0)
+        size_t len = strlen(joueurs[i].nom) + 1;
+        if (fwrite(joueurs[i].nom, sizeof(char), len, fichier) != len) goto erreur;
+        
+        // Main (on utilise le nb_cartes déjà sauvegardé dans l'en-tête)
+        if (fwrite(joueurs[i].main, sizeof(Carte), nb_cartes, fichier) != nb_cartes) goto erreur;
+        
+        // Défausse
+        if (fwrite(&joueurs[i].defausse, sizeof(Pile), 1, fichier) != 1) goto erreur;
+    }
+
+    fclose(fichier);
+    return 1;
+
+erreur:
+    perror("Erreur écriture fichier");
+    if (fichier) fclose(fichier);
+    return 0;
+}
+
+int main() {
+    srand(time(NULL));
+    int nb_joueurs, nb_cartes;
+    char choix[3] = {0};
+    printf("Bienvenue sur CardYard (version française) !\n");
+    printf("VARIANTE ACTIVE : Nombre de cartes personnelles défini par l'utilisateur (CARD_USER).\n\n");
+      if (sauvegarde_existe()) {
+        int reponse_valide = 0;  // Flag de validation
+        do {
+            printf("Une sauvegarde existe. Charger ? (o/n) : ");
+            
+            /* Lecture sécurisée */
+            if (fgets(choix, sizeof(choix), stdin) == NULL) {
+                fprintf(stderr, "Erreur de saisie.\n");
+                exit(EXIT_FAILURE);
+            }
+
+            /* Nettoyage du buffer d'entrée */
+            if (!strchr(choix, '\n')) {
+                int c;
+                while ((c = getchar()) != '\n' && c != EOF);  // Vidange complète
+            }
+
+            /* Validation de la réponse */
+            reponse_valide = (choix[0] == 'o' || choix[0] == 'O' || 
+                            choix[0] == 'n' || choix[0] == 'N');
+            
+            if (!reponse_valide) {
+                printf("Réponse invalide. Veuillez saisir 'o' ou 'n'.\n");
+            }
+
+        } while (!reponse_valide);
+
+        if (choix[0] == 'o' || choix[0] == 'O') {
+            printf("Chargement de la partie...\n");
+            // [À compléter avec charger_jeu() ultérieurement]
+        }
+    }
+    // Demande du nombre de joueurs
+    do {
+        printf("Entrez le nombre de joueurs (entre 2 et 8) : ");
+        if (scanf("%d", &nb_joueurs) != 1) {
+            while (getchar() != '\n'); // vide le buffer
+            nb_joueurs = -1; // force la répétition
+        }
+
+        if (nb_joueurs < 2 || nb_joueurs > 8) {
+            fprintf(stderr, "Entrée invalide.\n");
+        }
+    } while (nb_joueurs < 2 || nb_joueurs > 8);
+
+    // Variante CARD_USER : Choix du nombre de cartes personnelles
+    do {
+        printf("Combien de cartes personnelles voulez-vous distribuer à chaque joueur ? (1 à 10) : ");
+        if (scanf("%d", &nb_cartes) != 1) {
+            while (getchar() != '\n'); // vide le buffer
+            nb_cartes = -1; // force la répétition
+            fprintf(stderr, "Entrée invalide.\n");
+            continue;
+        }
+        if (nb_cartes < 1 || nb_cartes > 10) {
+            fprintf(stderr, "Entrée invalide.\n");
+        }
+    } while (nb_cartes < 1 || nb_cartes > 10);
+
+    Joueur joueurs[NB_JOUEURS_MAX];
+    Pile pioche;
+    initialiser_pioche(&pioche);
+    
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+
+    for (int i = 0; i < nb_joueurs; i++) {
+        char nom_temp[256];
+        printf("Nom du joueur %d : ", i + 1);
+        fgets(nom_temp, sizeof(nom_temp), stdin);
+
+    // Supprime le \n final s’il existe
+    nom_temp[strcspn(nom_temp, "\n")] = 0;
+
+    if (strlen(nom_temp) == 0) {
+        printf("Nom vide non autorisé. Réessayez.\n");
+        i--; // Refaire cette itération
+        continue;
+}
+
+joueurs[i].nom = malloc(strlen(nom_temp) + 1);
+if (!joueurs[i].nom) {
+    fprintf(stderr, "Erreur d'allocation mémoire.\n");
+    exit(1);
+}
+strcpy(joueurs[i].nom, nom_temp);
+        initialiser_joueur(&joueurs[i], nom_temp, &pioche, nb_cartes);
+    }
+
+    jouer_partie(joueurs, nb_joueurs, &pioche, nb_cartes);
+
+    for (int i = 0; i < nb_joueurs; i++) {
+        free(joueurs[i].nom);
+        free(joueurs[i].main); // Libération de la mémoire allouée pour les cartes
+    }
+
+    return 0;
+}
