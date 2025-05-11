@@ -375,11 +375,12 @@ int main() {
     } while (nb_joueurs < 2 || nb_joueurs > 8);
 
     // Variante CARD_USER : Choix du nombre de cartes personnelles
+        // Variante CARD_USER : Choix du nombre de cartes personnelles
     do {
         printf("Combien de cartes personnelles voulez-vous distribuer à chaque joueur ? (1 à 10) : ");
         if (scanf("%d", &nb_cartes) != 1) {
-            while (getchar() != '\n'); // vide le buffer
-            nb_cartes = -1; // force la répétition
+            while (getchar() != '\n'); // vide le buffer en cas d'échec
+            nb_cartes = -1;            // force la répétition
             fprintf(stderr, "Entrée invalide.\n");
             continue;
         }
@@ -388,35 +389,62 @@ int main() {
         }
     } while (nb_cartes < 1 || nb_cartes > 10);
 
+    // ── VIDAGE DU '\n' RESTANT APRÈS LE scanf
+    {
+        int _ch;
+        while ((_ch = getchar()) != '\n' && _ch != EOF);
+    }
+
+    // Initialisation des joueurs et de la pioche
     Joueur joueurs[NB_JOUEURS_MAX];
     Pile pioche;
     initialiser_pioche(&pioche);
-    
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF);
 
+    // Boucle de saisie des noms
     for (int i = 0; i < nb_joueurs; i++) {
         char nom_temp[256];
         printf("Nom du joueur %d : ", i + 1);
-        fgets(nom_temp, sizeof(nom_temp), stdin);
+        if (!fgets(nom_temp, sizeof(nom_temp), stdin)) {
+            fprintf(stderr, "Erreur de lecture.\n");
+            i--;
+            continue;
+        }
 
-    // Supprime le \n final s’il existe
-    nom_temp[strcspn(nom_temp, "\n")] = 0;
+        // Supprime le '\n' final s’il existe
+        nom_temp[strcspn(nom_temp, "\n")] = '\0';
 
-    if (strlen(nom_temp) == 0) {
-        printf("Nom vide non autorisé. Réessayez.\n");
-        i--; // Refaire cette itération
-        continue;
-}
+        // Chaîne vide ?
+        if (nom_temp[0] == '\0') {
+            printf("Nom vide non autorisé. Réessayez.\n");
+            i--;
+            continue;
+        }
 
-joueurs[i].nom = malloc(strlen(nom_temp) + 1);
-if (!joueurs[i].nom) {
-    fprintf(stderr, "Erreur d'allocation mémoire.\n");
-    exit(1);
-}
-strcpy(joueurs[i].nom, nom_temp);
-        initialiser_joueur(&joueurs[i], nom_temp, &pioche, nb_cartes);
+        // Vérification manuelle : chaque caractère doit être A–Z ou a–z
+        int valide = 1;
+        for (size_t k = 0; k < strlen(nom_temp); k++) {
+            char c = nom_temp[k];
+            if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
+                valide = 0;
+                break;
+            }
+        }
+        if (!valide) {
+            printf("Nom invalide : n'entrez que des lettres (A–Z, a–z).\n");
+            i--;
+            continue;
+        }
+
+        // Allocation et copie du nom validé
+        joueurs[i].nom = malloc(strlen(nom_temp) + 1);
+        if (!joueurs[i].nom) {
+            fprintf(stderr, "Erreur d'allocation mémoire.\n");
+            exit(1);
+        }
+        strcpy(joueurs[i].nom, nom_temp);
+        initialiser_joueur(&joueurs[i], joueurs[i].nom, &pioche, nb_cartes);
     }
+
 
     jouer_partie(joueurs, nb_joueurs, &pioche, nb_cartes);
 
