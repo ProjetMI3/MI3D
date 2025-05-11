@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "couleurs.h"
 
 #define NB_CARTES_MAX 151
 #define NB_JOUEURS_MAX 9
