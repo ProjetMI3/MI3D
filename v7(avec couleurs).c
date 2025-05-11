@@ -391,19 +391,30 @@ int main() {
     Joueur joueurs[NB_JOUEURS_MAX];
     Pile pioche;
     initialiser_pioche(&pioche);
+    
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
 
     for (int i = 0; i < nb_joueurs; i++) {
         char nom_temp[256];
         printf("Nom du joueur %d : ", i + 1);
-        while (getchar() != '\n'); // vide le buffer après scanf précédent
         fgets(nom_temp, sizeof(nom_temp), stdin);
-        nom_temp[strcspn(nom_temp, "\n")] = 0; // supprime le \n final
-        joueurs[i].nom = malloc(strlen(nom_temp) + 1);
-        if (!joueurs[i].nom) {
-            fprintf(stderr, "Erreur d'allocation mémoire.\n");
-            exit(1);
-        }
-        strcpy(joueurs[i].nom, nom_temp);
+
+    // Supprime le \n final s’il existe
+    nom_temp[strcspn(nom_temp, "\n")] = 0;
+
+    if (strlen(nom_temp) == 0) {
+        printf("Nom vide non autorisé. Réessayez.\n");
+        i--; // Refaire cette itération
+        continue;
+}
+
+joueurs[i].nom = malloc(strlen(nom_temp) + 1);
+if (!joueurs[i].nom) {
+    fprintf(stderr, "Erreur d'allocation mémoire.\n");
+    exit(1);
+}
+strcpy(joueurs[i].nom, nom_temp);
         initialiser_joueur(&joueurs[i], nom_temp, &pioche, nb_cartes);
     }
 
