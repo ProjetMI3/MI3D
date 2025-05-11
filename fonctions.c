@@ -53,10 +53,22 @@ void initialiser_joueur(Joueur* joueur, const char* nom, Pile* pioche, int nb_ca
 }
 
 void afficher_carte(Carte c) {
-    if (c.visible)
-        printf("[ %2d ]", c.valeur);
-    else
-        printf("[ ?? ]");
+    if (!c.visible) {
+        // Carte non visible (face cachée)
+        printf("\033[1;30;100m[ ?? ]\033[0m ");
+        return;
+    }
+
+    int val = c.valeur;
+    const char* color_code;
+
+    if (val == -2)        color_code = "\033[1;37;41m";   // texte blanc, fond rouge
+    else if (val <= 0)    color_code = "\033[1;30;43m";   // texte noir, fond jaune
+    else if (val <= 5)    color_code = "\033[1;30;42m";   // texte noir, fond vert
+    else if (val <= 8)    color_code = "\033[1;30;46m";   // texte noir, fond cyan
+    else                  color_code = "\033[1;37;45m";   // texte blanc, fond magenta
+
+    printf("%s[ %2d ]\033[0m ", color_code, val);
 }
 
 void afficher_main(Joueur joueur, int nb_cartes) {
