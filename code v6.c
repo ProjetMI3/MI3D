@@ -293,12 +293,12 @@ if (tous_visibles) {
         tour = (tour + 1) % nb_joueurs;
         tour_total++;
     }
-
-    // Résultats
+// Résultat
 printf("\n--- Fin de la partie ---\n");
 int scores[NB_JOUEURS_MAX];
 int min_score = 9999; // Une valeur suffisamment grande
 
+// Calcul des scores
 for (int i = 0; i < nb_joueurs; i++) {
     int score = 0;
     for (int j = 0; j < nb_cartes; j++)
@@ -307,8 +307,30 @@ for (int i = 0; i < nb_joueurs; i++) {
     if (score < min_score) {
         min_score = score;
     }
-    printf("%s : %d points\n", joueurs[i].nom, score);
 }
+
+// Tri des scores dans l'ordre croissant
+for (int i = 0; i < nb_joueurs - 1; i++) {
+    for (int j = 0; j < nb_joueurs - i - 1; j++) {
+        if (scores[j] > scores[j + 1]) {
+            // Échange des scores
+            int temp = scores[j];
+            scores[j] = scores[j + 1];
+            scores[j + 1] = temp;
+
+            // Échange des noms des joueurs correspondants
+            char *temp_nom = joueurs[j].nom;
+            joueurs[j].nom = joueurs[j + 1].nom;
+            joueurs[j + 1].nom = temp_nom;
+        }
+    }
+}
+
+// Affichage des scores triés dans l'ordre croissant
+for (int i = 0; i < nb_joueurs; i++) {
+    printf("%s : %d points\n", joueurs[i].nom, scores[i]);
+}
+
 
 // Affichage du/des gagnant(s)
 printf("\n🏆 Vainqueur%s : ", (min_score == 9999 ? "" : " "));
