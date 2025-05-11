@@ -10,7 +10,7 @@ int main() {
     do {
         printf("Entrez le nombre de joueurs (entre 2 et 8) : ");
         if (scanf("%d", &nb_joueurs) != 1) {
-            while (getchar() != '\n'); //vide buffer
+            while (getchar() != '\n'); // vide le buffer
             nb_joueurs = -1; // force la répétition
         }
 
@@ -20,11 +20,12 @@ int main() {
     } while (nb_joueurs < 2 || nb_joueurs > 8);
 
     // Variante CARD_USER : Choix du nombre de cartes personnelles
+        // Variante CARD_USER : Choix du nombre de cartes personnelles
     do {
         printf("Combien de cartes personnelles voulez-vous distribuer à chaque joueur ? (1 à 10) : ");
         if (scanf("%d", &nb_cartes) != 1) {
             while (getchar() != '\n'); // vide le buffer en cas d'échec
-            nb_cartes = -1;            // force la répétition encore une fois
+            nb_cartes = -1;            // force la répétition
             fprintf(stderr, "Entrée invalide.\n");
             continue;
         }
@@ -33,7 +34,7 @@ int main() {
         }
     } while (nb_cartes < 1 || nb_cartes > 10);
 
-    // vidage du '\n' restant apres le scanf
+    // ── VIDAGE DU '\n' RESTANT APRÈS LE scanf
     {
         int _ch;
         while ((_ch = getchar()) != '\n' && _ch != EOF);
@@ -68,7 +69,7 @@ int main() {
         int valide = 1;
         for (size_t k = 0; k < strlen(nom_temp); k++) {
             char c = nom_temp[k];
-            if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
+            if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == ' '))) {
                 valide = 0;
                 break;
             }
