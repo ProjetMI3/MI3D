@@ -174,7 +174,7 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
 
             // Vérification de la saisie du joueur
             if (choix_source == 1 || (choix_source == 2 && actif->defausse.top > 0) || (choix_source == 3 && tour_total > 0)) {
-                break;  // Saisie valide, sortir de la boucle
+                break;  // sortir de la boucle si la saisie est valide
             } else {
                 printf("Choix invalide, ressaisissez : ");
             }
@@ -203,14 +203,14 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
                 continue;  // Redemander le choix sans annuler le tour
             }
 
-            // Piocher dans la propre défausse
+            // Piocher dans sa propre défausse
             piochee = actif->defausse.cartes[--actif->defausse.top];
             printf("Vous avez pris une carte de votre défausse : ");
             afficher_carte(piochee);
             printf("\n");
 
         } else if (choix_source == 3 && tour_total > 0) {
-            // Afficher uniquement les joueurs valides
+            // Afficher uniquement les joueurs qui ont une defausse
             printf("Joueurs disponibles pour piocher leur défausse :\n");
             for (int i = 0; i < nb_joueurs; i++) {
                 if (i != tour && joueurs[i].defausse.top > 0) {
@@ -244,7 +244,7 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
         printf("Index de la carte à échanger (0 à %d) : ", nb_cartes - 1);  // Affichage ici (une seule fois)
         if (scanf("%d", &idx) == 1) {
             if (idx >= 0 && idx < nb_cartes) {
-                break;  // sortie : saisie correcte et dans les limites
+                break;  // sortie : si saisie correcte et dans les limites
             } else {
                 printf("Index hors limites. Essayez encore.\n");
             }
@@ -283,7 +283,7 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
             }
         }
 
-        // Vérifie si TOUS les joueurs ont toutes leurs cartes visibles
+        // Vérifie si tous les joueurs ont toutes leurs cartes visibles
         int tous_visibles = 1;
         for (int j = 0; j < nb_joueurs; j++) {
             for (int k = 0; k < nb_cartes; k++) {
@@ -327,7 +327,7 @@ for (int i = 0; i < nb_joueurs - 1; i++) {
             scores[j] = scores[j + 1];
             scores[j + 1] = temp;
 
-            // Échange des noms des joueurs correspondants
+            // Échange des noms des joueurs correspondants aux scores
             char *temp_nom = joueurs[j].nom;
             joueurs[j].nom = joueurs[j + 1].nom;
             joueurs[j + 1].nom = temp_nom;
@@ -364,7 +364,7 @@ int main() {
     do {
         printf("Entrez le nombre de joueurs (entre 2 et 8) : ");
         if (scanf("%d", &nb_joueurs) != 1) {
-            while (getchar() != '\n'); // vide le buffer
+            while (getchar() != '\n'); //vide buffer
             nb_joueurs = -1; // force la répétition
         }
 
@@ -374,12 +374,11 @@ int main() {
     } while (nb_joueurs < 2 || nb_joueurs > 8);
 
     // Variante CARD_USER : Choix du nombre de cartes personnelles
-        // Variante CARD_USER : Choix du nombre de cartes personnelles
     do {
         printf("Combien de cartes personnelles voulez-vous distribuer à chaque joueur ? (1 à 10) : ");
         if (scanf("%d", &nb_cartes) != 1) {
             while (getchar() != '\n'); // vide le buffer en cas d'échec
-            nb_cartes = -1;            // force la répétition
+            nb_cartes = -1;            // force la répétition encore une fois
             fprintf(stderr, "Entrée invalide.\n");
             continue;
         }
@@ -388,7 +387,7 @@ int main() {
         }
     } while (nb_cartes < 1 || nb_cartes > 10);
 
-    // ── VIDAGE DU '\n' RESTANT APRÈS LE scanf
+    // vidage du '\n' restant apres le scanf
     {
         int _ch;
         while ((_ch = getchar()) != '\n' && _ch != EOF);
