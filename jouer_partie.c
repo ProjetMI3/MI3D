@@ -59,7 +59,7 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
 
             // Vérification de la saisie du joueur
             if (choix_source == 1 || (choix_source == 2 && actif->defausse.top > 0) || (choix_source == 3 && tour_total > 0)) {
-                break;  // Saisie valide, sortir de la boucle
+                break;  // sortir de la boucle si la saisie est valide
             } else {
                 printf("Choix invalide, ressaisissez : ");
             }
@@ -88,14 +88,14 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
                 continue;  // Redemander le choix sans annuler le tour
             }
 
-            // Piocher dans la propre défausse
+            // Piocher dans sa propre défausse
             piochee = actif->defausse.cartes[--actif->defausse.top];
             printf("Vous avez pris une carte de votre défausse : ");
             afficher_carte(piochee);
             printf("\n");
 
         } else if (choix_source == 3 && tour_total > 0) {
-            // Afficher uniquement les joueurs valides
+            // Afficher uniquement les joueurs qui ont une defausse
             printf("Joueurs disponibles pour piocher leur défausse :\n");
             for (int i = 0; i < nb_joueurs; i++) {
                 if (i != tour && joueurs[i].defausse.top > 0) {
@@ -122,25 +122,22 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
 
         // Choix de la carte à remplacer
         printf("\nVotre main :\n");
-        afficher_main(*actif, nb_cartes);
+    afficher_main(*actif, nb_cartes);
 
-        int idx;
-        printf("Index de la carte à échanger (0 à %d) : ", nb_cartes - 1);
-        while (1) {
-    printf("Index de la carte à échanger (0 à %d) : ", nb_cartes - 1);
-    if (scanf("%d", &idx) == 1) {
-        if (idx >= 0 && idx < nb_cartes) {
-            break;  // sortie : saisie correcte et dans les limites
+    int idx;
+    while (1) {
+        printf("Index de la carte à échanger (0 à %d) : ", nb_cartes - 1);  // Affichage ici (une seule fois)
+        if (scanf("%d", &idx) == 1) {
+            if (idx >= 0 && idx < nb_cartes) {
+                break;  // sortie : si saisie correcte et dans les limites
+            } else {
+                printf("Index hors limites. Essayez encore.\n");
+            }
         } else {
-            printf("Index hors limites. Essayez encore.\n");
+            // Saisie invalide (pas un entier)
+            while (getchar() != '\n'); // vide le buffer
+            printf("Saisie invalide. Essayez encore.\n");
         }
-    } else {
-        // Saisie invalide (pas un entier)
-        while (getchar() != '\n'); // vide le buffer
-        printf("Saisie invalide. Essayez encore.\n");
-    }
-
-
 }
 
 
@@ -171,7 +168,7 @@ void jouer_partie(Joueur joueurs[], int nb_joueurs, Pile *pioche, int nb_cartes)
             }
         }
 
-        // Vérifie si TOUS les joueurs ont toutes leurs cartes visibles
+        // Vérifie si tous les joueurs ont toutes leurs cartes visibles
         int tous_visibles = 1;
         for (int j = 0; j < nb_joueurs; j++) {
             for (int k = 0; k < nb_cartes; k++) {
@@ -190,12 +187,12 @@ if (tous_visibles) {
         tour = (tour + 1) % nb_joueurs;
         tour_total++;
     }
-
-    // Résultats
+// Résultat
 printf("\n--- Fin de la partie ---\n");
 int scores[NB_JOUEURS_MAX];
 int min_score = 9999; // Une valeur suffisamment grande
 
+// Calcul des scores
 for (int i = 0; i < nb_joueurs; i++) {
     int score = 0;
     for (int j = 0; j < nb_cartes; j++)
@@ -204,8 +201,30 @@ for (int i = 0; i < nb_joueurs; i++) {
     if (score < min_score) {
         min_score = score;
     }
-    printf("%s : %d points\n", joueurs[i].nom, score);
 }
+
+// Tri des scores dans l'ordre croissant
+for (int i = 0; i < nb_joueurs - 1; i++) {
+    for (int j = 0; j < nb_joueurs - i - 1; j++) {
+        if (scores[j] > scores[j + 1]) {
+            // Échange des scores
+            int temp = scores[j];
+            scores[j] = scores[j + 1];
+            scores[j + 1] = temp;
+
+            // Échange des noms des joueurs correspondants aux scores
+            char *temp_nom = joueurs[j].nom;
+            joueurs[j].nom = joueurs[j + 1].nom;
+            joueurs[j + 1].nom = temp_nom;
+        }
+    }
+}
+
+// Affichage des scores triés dans l'ordre croissant
+for (int i = 0; i < nb_joueurs; i++) {
+    printf("%s : %d points\n", joueurs[i].nom, scores[i]);
+}
+
 
 // Affichage du/des gagnant(s)
 printf("\n🏆 Vainqueur%s : ", (min_score == 9999 ? "" : " "));
