@@ -3,8 +3,8 @@
 #include <string.h>
 #include <time.h>
 
-#define NB_CARTES_MAX 151
-#define NB_JOUEURS_MAX 9
+#define NB_CARTES_MAX 150
+#define NB_JOUEURS_MAX 8
 
 typedef struct {
     int valeur;
@@ -43,9 +43,19 @@ void initialiser_pioche(Pile* pioche) {
     int quantites[3] = {5, 10, 15};
 
     for (int valeur = -2; valeur <= 12; valeur++) {
-        int nombre = (valeur == -2) ? quantites[0] :
-                     (valeur == -1) ? quantites[1] :
-                     (valeur == 0)  ? quantites[2] : 10;
+        int nombre;
+        if (valeur == -2) {
+            nombre = quantites[0];
+        } 
+        else if (valeur == -1) {
+            nombre = quantites[1];
+        } 
+        else if (valeur == 0) {
+            nombre = quantites[2];
+        } else {
+            nombre = 10;
+        }
+
 
         for (int i = 0; i < nombre; i++) {
             Carte nouvelle = creer_carte(valeur, 0);
